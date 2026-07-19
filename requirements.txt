@@ -1,0 +1,7 @@
+numpy==2.4.6
+opencv-python==5.0.0.93
+pillow==12.3.0
+torch==2.13.0
+torchvision==0.28.0
+transformers==5.14.1
+huggingface_hub==1.24.0
