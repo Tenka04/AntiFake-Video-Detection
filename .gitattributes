@@ -1,0 +1,11 @@
+* text=auto eol=lf
+
+# Common binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.mp4 binary
+*.mov binary
+*.avi binary
+*.zip binary

@@ -1,0 +1,25 @@
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editor/IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Python cache and virtual environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Environment and logs
+.env
+.env.*
+*.log
+
+# Local data/artifacts
+video_path/
+comprehensive_plan.md
