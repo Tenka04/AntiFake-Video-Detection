@@ -1,20 +1,52 @@
 # AI Video Detector POC
 
+## Current development phase
+
+Phase 1 and Phase 2 are implemented. The existing React frontend has been
+preserved unchanged. A new backend package now provides safe, reusable video
+inspection and uniform RGB frame sampling; no API endpoint or detector model
+has been added yet.
+
+### Implemented preprocessing
+
+- Validates and opens locally supplied videos through OpenCV.
+- Extracts FPS, dimensions, frame count, estimated duration, codec, and
+  best-effort audio-stream availability. Audio is reported as unavailable
+  (`None`) when `ffprobe` is not installed rather than guessed.
+- Samples up to 16 unique, uniformly distributed frames by default, resized to
+  224x224 RGB. Short clips return their available unique frames.
+- Raises a controlled `VideoProcessingError` for missing, corrupted, or
+  non-decodable videos.
+
+The preprocessing API lives in `backend/app/preprocessing/` and is covered by
+`backend/tests/test_preprocessing.py`. Run it with:
+
+```powershell
+Set-Location backend
+..\venv\Scripts\python.exe -m unittest discover -s tests -v
+```
+
+### Not implemented yet
+
+- FastAPI routes and upload handling (Phase 4)
+- VideoMAE model inference (Phase 3)
+- temporal, frequency, audio, fusion, training, and evaluation branches
+
+The root requirements now declare FastAPI and Uvicorn for the upcoming API
+phase. They must be installed before starting that API.
+
 This repository contains a small proof-of-concept for analyzing whether a video looks AI-generated or manipulated. The current implementation is a single Python script, [`poc_runtime.py`](/E:/AI%20video%20Detector/poc_runtime.py), backed by a local virtual environment in `venv/`.
 
 ## What this project does
 
-The prototype runs two active checks on a video:
+The prototype currently uses one active model check and keeps a temporal
+diagnostic implementation for later calibration:
 
 - `VisualDetector`: samples 15 frames across the video and sends them through the Hugging Face model `dima806/ai_vs_real_image_detection`.
-- `TemporalDetector`: measures frame-to-frame consistency using grayscale mean squared error to catch unnatural flicker or morphing.
+- `TemporalDetector`: measures frame-to-frame consistency using grayscale mean squared error, but is **not used in the verdict** because it has not been calibrated as a probability model.
 
-The script then combines those signals using a weighted fusion step:
-
-- visual weight: `0.40`
-- temporal weight: `0.60`
-
-If the temporal detector finds very strong evidence of normal scene cuts, it reduces the visual detector's influence before calculating the final score.
+The verdict is based only on the trained image-classification model's aggregate
+frame score. A scene cut or motion heuristic cannot override that score.
 
 ## What is in the repository
 
@@ -31,8 +63,7 @@ When you run the script, it follows this flow:
 1. Load the Hugging Face image classification pipeline.
 2. Open the target video with OpenCV.
 3. Sample frames for visual classification.
-4. Analyze a short middle segment for temporal consistency.
-5. Fuse the detector scores into one overall AI probability.
+4. Aggregate the trained visual-model scores into one overall AI probability.
 6. Print a terminal report with:
    - verdict
    - overall AI score
@@ -105,14 +136,17 @@ The script prints a console report similar to:
 - `Overall Confidence`
 - `Evidence Breakdown` for visual and temporal detectors
 
-The first run may take longer because the Hugging Face model can download its weights into the local cache.
+The complete Hugging Face checkpoint must be available locally. The POC does
+not silently download or substitute a model during analysis; it reports an
+explicit unavailable-model error instead.
 
 ## Current limitations
 
 - Audio detection is only a mock placeholder.
 - Metadata detection is only a mock placeholder.
 - The visual model is an image detector, not a video-native detector.
-- The temporal detector is heuristic and may misread edited real videos or low-quality clips.
+- The temporal detector is an uncalibrated heuristic and is intentionally not
+  used in the verdict.
 - There is no batch mode, web UI, API, persistence layer, or saved report format yet.
 - The script prints results to stdout only.
 

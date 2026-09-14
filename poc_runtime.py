@@ -4,11 +4,16 @@ os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 import argparse
 import random
 import time
+import sys
 import cv2
 from typing import Dict, Any, List
 from PIL import Image
-from transformers import pipeline
+from transformers import AutoImageProcessor, AutoModelForImageClassification, pipeline
 import numpy as np
+
+
+class ModelUnavailableError(RuntimeError):
+    """Raised when the configured detector checkpoint is not available locally."""
 
 class BaseDetector:
     """Base interface that all detectors must implement (Section 9 of plan)"""
@@ -32,9 +37,21 @@ class BaseDetector:
 
 class VisualDetector(BaseDetector):
     def initialize(self):
-        print("  [Visual] Initializing Hugging Face pipeline (this may take a moment to download weights)...")
+        print("  [Visual] Initializing the locally configured Hugging Face pipeline...")
         # Initialize the pipeline for image classification with a general AI image detector
-        self.pipe = pipeline("image-classification", model="dima806/ai_vs_real_image_detection")
+        try:
+            # The detector must not silently fall back to a different model. A
+            # missing local asset is an unavailable model, not evidence that a
+            # video is authentic.
+            checkpoint = "dima806/ai_vs_real_image_detection"
+            image_processor = AutoImageProcessor.from_pretrained(checkpoint, local_files_only=True)
+            model = AutoModelForImageClassification.from_pretrained(checkpoint, local_files_only=True)
+            self.pipe = pipeline("image-classification", model=model, image_processor=image_processor)
+        except (OSError, ValueError) as error:
+            raise ModelUnavailableError(
+                "The configured visual detector is incomplete or unavailable locally. "
+                "Install the model's complete checkpoint before running inference."
+            ) from error
         self._score = 0.0
         self._conf = 0.0
         self._frames_analyzed = 0
@@ -75,13 +92,15 @@ class VisualDetector(BaseDetector):
             # Pipeline returns something like: [{'label': 'fake', 'score': 0.99}, {'label': 'real', 'score': 0.01}]
             result = self.pipe(pil_image)
             
-            # Find the fake/artificial probability
-            fake_prob = 0.0
+            # Model labels are normalized because checkpoint label casing is
+            # metadata, not an API guarantee.
+            fake_prob = None
             for res in result:
-                if res['label'] == 'FAKE':
+                if str(res['label']).strip().upper() in {"FAKE", "AI", "AI_GENERATED"}:
                     fake_prob = res['score']
                     break
-                    
+            if fake_prob is None:
+                raise RuntimeError("Configured visual detector returned no recognized AI-generated label.")
             fake_probabilities.append(fake_prob)
             confidences.append(max([r['score'] for r in result])) # Highest confidence score for this prediction
             
@@ -214,12 +233,6 @@ class FusionEngine:
         }
 
     def fuse(self, results: Dict[str, float]) -> float:
-        # Apply Temporal Veto Power
-        if "temporal" in results and "visual" in results:
-            if results["temporal"] <= 0.10:
-                print("  [Fusion] Temporal VETO triggered! Professional scene cuts detected. Penalizing Visual score.")
-                results["visual"] *= 0.25 # Slashes the visual score by 75%
-                
         final_score = 0.0
         total_weight = 0.0
         for key, score in results.items():
@@ -249,7 +262,9 @@ def analyze_video(video_path: str):
     explanations = {}
     
     for key, detector in detectors.items():
-        if key not in ["visual", "temporal"]:
+        # Temporal MSE is a diagnostic heuristic only. It is not calibrated as
+        # an authenticity probability and must not override a trained model.
+        if key != "visual":
             continue # Skip running others for now to save time
         score = detector.analyze(video_path)
         conf = detector.confidence()
@@ -264,7 +279,12 @@ def analyze_video(video_path: str):
     fusion = FusionEngine()
     final_score = fusion.fuse(scores)
     # Only calculate confidence for non-zero weights
-    overall_conf = sum(detectors[k].confidence() * fusion.weights[k] for k in detectors if fusion.weights[k] > 0)
+    active_weight = sum(fusion.weights[key] for key in scores)
+    overall_conf = (
+        sum(detectors[key].confidence() * fusion.weights[key] for key in scores) / active_weight
+        if active_weight > 0
+        else 0.0
+    )
     
     # 4. Clean up
     for d in detectors.values():
@@ -300,4 +320,8 @@ if __name__ == "__main__":
     parser.add_argument("video", help="Path to the video file to analyze")
     args = parser.parse_args()
     
-    analyze_video(args.video)
+    try:
+        analyze_video(args.video)
+    except ModelUnavailableError as error:
+        print(f"Analysis unavailable: {error}", file=sys.stderr)
+        raise SystemExit(2)
