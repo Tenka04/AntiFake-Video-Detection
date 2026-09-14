@@ -266,6 +266,13 @@ def analyze_video(video_path: str):
         print(f"    Model/Tool: {data['details']['model' if 'model' in data['details'] else 'tool']}\n")
     print("="*45)
 
+    return {
+        "score": final_score,
+        "confidence": overall_conf,
+        "verdict": verdict,
+        "summary": explanations.get("temporal", {}).get("details", {}).get("reason", "Analyzed video for AI manipulation.")
+    }
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="AI Video Authenticity Analyzer POC")
     parser.add_argument("video", help="Path to the video file to analyze")
