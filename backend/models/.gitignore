@@ -1,0 +1,3 @@
+# Downloaded checkpoint artifacts are intentionally not committed.
+*
+!.gitignore

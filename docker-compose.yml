@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app/backend
+    depends_on:
+      - model
+    environment:
+      - MODEL_SERVICE_HOST=model:50051
+
+  model:
+    build:
+      context: .
+      dockerfile: model/Dockerfile
+    ports:
+      - "50051:50051"
+    volumes:
+      - ./model:/app/model
