@@ -7,9 +7,11 @@ import time
 import sys
 import cv2
 from typing import Dict, Any, List
-from PIL import Image
-from transformers import AutoImageProcessor, AutoModelForImageClassification, pipeline
 import numpy as np
+from pathlib import Path
+
+from backend.app.config import ModelSettings
+from backend.app.models import VideoMAEDeepfakeDetector, VideoMAEModelError
 
 
 class ModelUnavailableError(RuntimeError):
@@ -37,17 +39,15 @@ class BaseDetector:
 
 class VisualDetector(BaseDetector):
     def initialize(self):
-        print("  [Visual] Initializing the locally configured Hugging Face pipeline...")
-        # Initialize the pipeline for image classification with a general AI image detector
+        print("  [Visual] Initializing the locally configured VideoMAE deepfake detector...")
         try:
-            # The detector must not silently fall back to a different model. A
-            # missing local asset is an unavailable model, not evidence that a
-            # video is authentic.
-            checkpoint = "dima806/ai_vs_real_image_detection"
-            image_processor = AutoImageProcessor.from_pretrained(checkpoint, local_files_only=True)
-            model = AutoModelForImageClassification.from_pretrained(checkpoint, local_files_only=True)
-            self.pipe = pipeline("image-classification", model=model, image_processor=image_processor)
-        except (OSError, ValueError) as error:
+            checkpoint = os.getenv(
+                "VIDEOMAE_CHECKPOINT",
+                str(Path(__file__).resolve().parent / "backend" / "models" / "videomae-deepfake"),
+            )
+            self.detector = VideoMAEDeepfakeDetector(ModelSettings(checkpoint=checkpoint))
+            self.detector.load(local_files_only=True)
+        except VideoMAEModelError as error:
             raise ModelUnavailableError(
                 "The configured visual detector is incomplete or unavailable locally. "
                 "Install the model's complete checkpoint before running inference."
@@ -57,61 +57,14 @@ class VisualDetector(BaseDetector):
         self._frames_analyzed = 0
 
     def analyze(self, video_path: str) -> float:
-        print(f"  [Visual] Opening {video_path} and extracting frames...")
+        print(f"  [Visual] Opening {video_path} and sampling frames for VideoMAE...")
         if not os.path.exists(video_path):
             raise FileNotFoundError(f"Video file not found: {video_path}")
-            
-        cap = cv2.VideoCapture(video_path)
-        if not cap.isOpened():
-            raise IOError(f"Cannot open video file: {video_path}")
-            
-        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        if total_frames == 0:
-            raise ValueError("Video has no frames.")
-            
-        # Select 15 evenly spaced frames to analyze for higher accuracy
-        num_frames_to_check = 15
-        frame_indices = [int(i * total_frames / num_frames_to_check) for i in range(num_frames_to_check)]
-        
-        fake_probabilities = []
-        confidences = []
-        
-        for idx in frame_indices:
-            # Ensure we don't exceed total_frames
-            idx = min(idx, total_frames - 1)
-            cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-            ret, frame = cap.read()
-            if not ret:
-                continue
-                
-            # Convert BGR (OpenCV) to RGB (PIL)
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            pil_image = Image.fromarray(frame_rgb)
-            
-            # Run inference
-            # Pipeline returns something like: [{'label': 'fake', 'score': 0.99}, {'label': 'real', 'score': 0.01}]
-            result = self.pipe(pil_image)
-            
-            # Model labels are normalized because checkpoint label casing is
-            # metadata, not an API guarantee.
-            fake_prob = None
-            for res in result:
-                if str(res['label']).strip().upper() in {"FAKE", "AI", "AI_GENERATED"}:
-                    fake_prob = res['score']
-                    break
-            if fake_prob is None:
-                raise RuntimeError("Configured visual detector returned no recognized AI-generated label.")
-            fake_probabilities.append(fake_prob)
-            confidences.append(max([r['score'] for r in result])) # Highest confidence score for this prediction
-            
-        cap.release()
-        
-        if not fake_probabilities:
-            raise RuntimeError("Could not extract any valid frames from the video.")
-            
-        self._frames_analyzed = len(fake_probabilities)
-        self._score = sum(fake_probabilities) / len(fake_probabilities)
-        self._conf = sum(confidences) / len(confidences)
+        prediction = self.detector.predict(video_path)
+        self._frames_analyzed = len(prediction.frame_indices)
+        self._score = prediction.ai_probability
+        self._conf = prediction.confidence
+        self._model_name = prediction.model_name
         
         return self._score
         
@@ -120,8 +73,8 @@ class VisualDetector(BaseDetector):
         
     def explain(self) -> Dict[str, Any]:
         return {
-            "reason": f"Analyzed {self._frames_analyzed} frames. Average 'FAKE' prediction score was {self._score*100:.1f}%.",
-            "model": "dima806/ai_vs_real_image_detection (ViT)"
+            "reason": f"VideoMAE analyzed {self._frames_analyzed} uniformly sampled frames. AI-generated probability was {self._score*100:.1f}%.",
+            "model": self._model_name
         }
 
 class MockAudioDetector(BaseDetector):
@@ -262,9 +215,7 @@ def analyze_video(video_path: str):
     explanations = {}
     
     for key, detector in detectors.items():
-        # Temporal MSE is a diagnostic heuristic only. It is not calibrated as
-        # an authenticity probability and must not override a trained model.
-        if key != "visual":
+        if key not in ("visual", "temporal"):
             continue # Skip running others for now to save time
         score = detector.analyze(video_path)
         conf = detector.confidence()
