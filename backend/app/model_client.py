@@ -6,7 +6,7 @@ import logging
 import sys
 import os
 # Assuming proto files are shared or copied here
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../model/proto')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../model/proto')))
 
 try:
     import video_detector_pb2
@@ -20,7 +20,8 @@ def analyze_video(video_path: str, job_id: str):
         return {"error": "gRPC proto files not found"}
         
     # Connect to the gRPC server
-    channel = grpc.insecure_channel('model:50051') # 'model' matches the docker-compose service name
+    host = os.environ.get('MODEL_SERVICE_HOST', 'localhost:50051')
+    channel = grpc.insecure_channel(host)
     stub = video_detector_pb2_grpc.VideoDetectorServiceStub(channel)
     
     try:
