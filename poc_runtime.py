@@ -93,6 +93,143 @@ class MockMetadataDetector(BaseDetector):
     def confidence(self) -> float: return self._conf
     def explain(self) -> Dict[str, Any]: return {"reason": "Disabled for V1", "tool": "N/A"}
 
+class FrequencyDetector(BaseDetector):
+    def initialize(self):
+        print("  [Frequency] Initializing frequency domain (FFT) analyzer...")
+        self._score = 0.0
+        self._conf = 0.0
+        self._frames_analyzed = 0
+
+    def analyze(self, video_path: str) -> float:
+        print(f"  [Frequency] Analyzing spectral artifacts...")
+        cap = cv2.VideoCapture(video_path)
+        if not cap.isOpened():
+            raise IOError(f"Cannot open video file: {video_path}")
+            
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        
+        # Analyze a few frames from the middle
+        start_frame = max(0, total_frames // 2)
+        cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+        
+        high_freq_energies = []
+        for _ in range(min(5, total_frames)):
+            ret, frame = cap.read()
+            if not ret: break
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            # Resize for consistent FFT size
+            gray = cv2.resize(gray, (512, 512))
+            
+            f = np.fft.fft2(gray)
+            fshift = np.fft.fftshift(f)
+            magnitude_spectrum = 20 * np.log(np.abs(fshift) + 1e-8)
+            
+            # Mask out low frequencies (center of the image)
+            rows, cols = gray.shape
+            crow, ccol = rows//2, cols//2
+            mask_size = 50
+            magnitude_spectrum[crow-mask_size:crow+mask_size, ccol-mask_size:ccol+mask_size] = 0
+            
+            # Calculate energy in high frequencies
+            high_freq_energy = np.mean(magnitude_spectrum[magnitude_spectrum > 0])
+            if not np.isnan(high_freq_energy):
+                high_freq_energies.append(high_freq_energy)
+            
+        cap.release()
+        
+        if not high_freq_energies: return 0.5
+        
+        avg_hf_energy = np.mean(high_freq_energies)
+        self._frames_analyzed = len(high_freq_energies)
+        self._hf_energy = avg_hf_energy
+        
+        # Heuristic: AI generators (Diffusion/VAEs) often have unnaturally low high-frequency energy due to upsampling smoothing
+        if avg_hf_energy < 160: 
+            self._score = 0.90
+            self._conf = 0.85
+        elif avg_hf_energy > 200:
+            self._score = 0.10
+            self._conf = 0.80
+        else:
+            self._score = 0.60
+            self._conf = 0.50
+            
+        return self._score
+
+    def confidence(self) -> float:
+        return self._conf
+
+    def explain(self) -> Dict[str, Any]:
+        return {
+            "reason": f"Analyzed {self._frames_analyzed} frames. High-frequency energy: {self._hf_energy:.2f}. " + 
+                      ("Unnaturally smooth (Likely AI upsampling)." if self._score > 0.5 else "Natural high-frequency detail detected."),
+            "model": "2D FFT Spectral Artifacts"
+        }
+
+class NoiseDetector(BaseDetector):
+    def initialize(self):
+        print("  [Noise] Initializing PRNU sensor noise analyzer...")
+        self._score = 0.0
+        self._conf = 0.0
+        self._frames_analyzed = 0
+
+    def analyze(self, video_path: str) -> float:
+        print(f"  [Noise] Extracting noise residuals...")
+        cap = cv2.VideoCapture(video_path)
+        if not cap.isOpened():
+            raise IOError(f"Cannot open video file: {video_path}")
+            
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        
+        start_frame = max(0, total_frames // 2)
+        cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+        
+        noise_variances = []
+        for _ in range(min(5, total_frames)):
+            ret, frame = cap.read()
+            if not ret: break
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            
+            # Apply Gaussian Blur to get the "signal"
+            blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+            
+            # Subtract to get the "noise" (residual)
+            residual = cv2.absdiff(gray, blurred)
+            
+            variance = np.var(residual)
+            noise_variances.append(variance)
+            
+        cap.release()
+        
+        if not noise_variances: return 0.5
+        
+        avg_noise_variance = np.mean(noise_variances)
+        self._frames_analyzed = len(noise_variances)
+        self._noise_var = avg_noise_variance
+        
+        # Heuristic: AI videos either lack real sensor noise (variance < 3) or have heavy artificial grain/compression to hide smoothing (variance > 15).
+        if avg_noise_variance < 3.0:
+            self._score = 0.95 # Too clean, lacks PRNU
+            self._conf = 0.90
+        elif avg_noise_variance > 15.0:
+            self._score = 0.85 # Heavy artificial grain / synthetic noise
+            self._conf = 0.80
+        else:
+            self._score = 0.15 # Natural moderate sensor noise
+            self._conf = 0.85
+            
+        return self._score
+
+    def confidence(self) -> float:
+        return self._conf
+
+    def explain(self) -> Dict[str, Any]:
+        return {
+            "reason": f"Analyzed {self._frames_analyzed} frames. Residual noise variance: {self._noise_var:.2f}. " + 
+                      ("Missing natural PRNU sensor noise." if self._score > 0.5 else "Natural sensor noise detected."),
+            "model": "PRNU Residual Variance"
+        }
+
 class TemporalDetector(BaseDetector):
     def initialize(self):
         print("  [Temporal] Initializing frame consistency analyzer...")
@@ -177,12 +314,14 @@ class TemporalDetector(BaseDetector):
 class FusionEngine:
     """Combines scores based on weights"""
     def __init__(self):
-        # Adjusted weights for V3: 60/40 balance prioritizing Temporal flow
+        # Adjusted weights for detecting high-quality generative models (Sora/Kling)
         self.weights = {
-            "visual": 0.40,
+            "visual": 0.15,
             "audio": 0.0,
             "metadata": 0.0,
-            "temporal": 0.60
+            "temporal": 0.35,
+            "frequency": 0.25,
+            "noise": 0.25
         }
 
     def fuse(self, results: Dict[str, float]) -> float:
@@ -204,7 +343,9 @@ def analyze_video(video_path: str):
         "visual": VisualDetector(),
         "audio": MockAudioDetector(),
         "metadata": MockMetadataDetector(),
-        "temporal": TemporalDetector()
+        "temporal": TemporalDetector(),
+        "frequency": FrequencyDetector(),
+        "noise": NoiseDetector()
     }
     
     for d in detectors.values():
@@ -215,7 +356,7 @@ def analyze_video(video_path: str):
     explanations = {}
     
     for key, detector in detectors.items():
-        if key not in ("visual", "temporal"):
+        if key not in ("visual", "temporal", "frequency", "noise"):
             continue # Skip running others for now to save time
         score = detector.analyze(video_path)
         conf = detector.confidence()
