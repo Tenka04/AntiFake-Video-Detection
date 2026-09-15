@@ -1,5 +1,12 @@
 // API Service Layer for AI Video Detection
 
+export interface DetectorResult {
+  name: string;
+  ai_score: number;
+  confidence: number;
+  reason: string;
+}
+
 export interface AnalysisResult {
   id: string;
   status: 'processing' | 'completed' | 'failed';
@@ -8,6 +15,8 @@ export interface AnalysisResult {
   confidence?: number;
   processing_time?: number;
   model_info?: string;
+  summary?: string;
+  detectors?: DetectorResult[];
   timestamp: string;
 }
 

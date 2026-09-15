@@ -12,9 +12,17 @@ message AnalyzeRequest {
   string job_id = 2;
 }
 
+message DetectorResult {
+  string name = 1;
+  float ai_score = 2;
+  float confidence = 3;
+  string reason = 4;
+}
+
 message AnalyzeResponse {
   string job_id = 1;
   float ai_probability = 2;
   float confidence = 3;
   string summary = 4;
+  repeated DetectorResult detectors = 5;
 }

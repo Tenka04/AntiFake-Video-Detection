@@ -85,6 +85,8 @@ async def analyze_video_endpoint(file: UploadFile = File(...)):
         "confidence": conf,
         "processing_time": round(processing_time, 1),
         "model_info": model_info,
+        "summary": result.get("summary") if not "error" in result else None,
+        "detectors": result.get("detectors") if not "error" in result else None,
         "timestamp": date_str
     }
 
@@ -197,6 +199,8 @@ async def analyze_video_url_endpoint(request: VideoUrlRequest):
         "confidence": conf,
         "processing_time": round(processing_time, 1),
         "model_info": model_info,
+        "summary": result.get("summary") if not "error" in result else None,
+        "detectors": result.get("detectors") if not "error" in result else None,
         "timestamp": date_str
     }
 

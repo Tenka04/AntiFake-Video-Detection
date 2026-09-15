@@ -20,11 +20,23 @@ class VideoDetectorServicer(video_detector_pb2_grpc.VideoDetectorServiceServicer
         
         try:
             results = analyze_video(request.video_path)
+            
+            detectors_list = []
+            if "detectors" in results:
+                for key, data in results["detectors"].items():
+                    detectors_list.append(video_detector_pb2.DetectorResult(
+                        name=key.upper(),
+                        ai_score=data.get("score", 0.0),
+                        confidence=data.get("confidence", 0.0),
+                        reason=data.get("details", {}).get("reason", "")
+                    ))
+                    
             return video_detector_pb2.AnalyzeResponse(
                 job_id=request.job_id,
                 ai_probability=results.get("score", 0.0),
                 confidence=results.get("confidence", 0.0),
-                summary=results.get("summary", "Analysis complete.")
+                summary=results.get("summary", "Analysis complete."),
+                detectors=detectors_list
             )
         except Exception as e:
             logging.error(f"Error during analysis: {e}")
@@ -32,7 +44,8 @@ class VideoDetectorServicer(video_detector_pb2_grpc.VideoDetectorServiceServicer
                 job_id=request.job_id,
                 ai_probability=0.0,
                 confidence=0.0,
-                summary=f"Analysis failed: {str(e)}"
+                summary=f"Analysis failed: {str(e)}",
+                detectors=[]
             )
 
 def serve():
