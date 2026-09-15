@@ -7,6 +7,9 @@ import { ResultCard } from '../components/analysis/ResultCard';
 import { analyzeVideoFile, analyzeVideoUrl } from '../services/api';
 import type { AnalysisResult } from '../services/api';
 import { cn } from '../lib/utils';
+import { SupportedGenerators } from '../components/layout/SupportedGenerators';
+import { HowItWorks } from '../components/layout/HowItWorks';
+import { ShieldCheck } from 'lucide-react';
 
 export function AnalyzePage() {
   const [activeTab, setActiveTab] = useState<'upload' | 'url'>('upload');
@@ -73,9 +76,19 @@ export function AnalyzePage() {
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white">
           Detect <span className="gradient-text">AI-Generated</span> Videos
         </h1>
-        <p className="text-gray-400 max-w-xl mx-auto text-lg">
+        <p className="text-gray-400 max-w-xl mx-auto text-lg mb-6">
           Upload a video or provide a video URL to analyze its authenticity using advanced AI detection models.
         </p>
+        
+        {/* Trust Badge */}
+        <div className="inline-flex items-center gap-3 px-4 py-2 bg-surface/30 border border-white/5 rounded-lg shadow-sm backdrop-blur-sm">
+          <ShieldCheck className="w-5 h-5 text-green-400" />
+          <div className="flex items-center gap-2 text-sm">
+            <span className="font-semibold text-white">Powered by AntiFake</span>
+            <span className="text-white/20">|</span>
+            <span className="text-gray-400">The First Word in AI Verification</span>
+          </div>
+        </div>
       </div>
 
       {/* Input Section */}
@@ -152,6 +165,14 @@ export function AnalyzePage() {
           </div>
         )}
       </div>
+      
+      {/* Educational Sections (only show if no video selected to keep focus on analysis) */}
+      {!hasVideo && !result && (
+        <div className="animate-in fade-in duration-700 delay-300">
+          <SupportedGenerators />
+          <HowItWorks />
+        </div>
+      )}
     </div>
   );
 }

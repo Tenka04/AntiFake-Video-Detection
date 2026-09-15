@@ -33,7 +33,15 @@ def analyze_video(video_path: str, job_id: str):
             "job_id": response.job_id,
             "ai_probability": response.ai_probability,
             "confidence": response.confidence,
-            "summary": response.summary
+            "summary": response.summary,
+            "detectors": [
+                {
+                    "name": d.name,
+                    "ai_score": d.ai_score,
+                    "confidence": d.confidence,
+                    "reason": d.reason
+                } for d in response.detectors
+            ]
         }
     except grpc.RpcError as e:
         logging.error(f"gRPC call failed: {e}")

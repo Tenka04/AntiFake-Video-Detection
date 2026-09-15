@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14video_detector.proto\x12\x0evideo_detector\"4\n\x0e\x41nalyzeRequest\x12\x12\n\nvideo_path\x18\x01 \x01(\t\x12\x0e\n\x06job_id\x18\x02 \x01(\t\"^\n\x0f\x41nalyzeResponse\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12\x16\n\x0e\x61i_probability\x18\x02 \x01(\x02\x12\x12\n\nconfidence\x18\x03 \x01(\x02\x12\x0f\n\x07summary\x18\x04 \x01(\t2i\n\x14VideoDetectorService\x12Q\n\x0c\x41nalyzeVideo\x12\x1e.video_detector.AnalyzeRequest\x1a\x1f.video_detector.AnalyzeResponse\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14video_detector.proto\x12\x0evideo_detector\"4\n\x0e\x41nalyzeRequest\x12\x12\n\nvideo_path\x18\x01 \x01(\t\x12\x0e\n\x06job_id\x18\x02 \x01(\t\"T\n\x0e\x44\x65tectorResult\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x10\n\x08\x61i_score\x18\x02 \x01(\x02\x12\x12\n\nconfidence\x18\x03 \x01(\x02\x12\x0e\n\x06reason\x18\x04 \x01(\t\"\x91\x01\n\x0f\x41nalyzeResponse\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12\x16\n\x0e\x61i_probability\x18\x02 \x01(\x02\x12\x12\n\nconfidence\x18\x03 \x01(\x02\x12\x0f\n\x07summary\x18\x04 \x01(\t\x12\x31\n\tdetectors\x18\x05 \x03(\x0b\x32\x1e.video_detector.DetectorResult2i\n\x14VideoDetectorService\x12Q\n\x0c\x41nalyzeVideo\x12\x1e.video_detector.AnalyzeRequest\x1a\x1f.video_detector.AnalyzeResponse\"\x00\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,8 +33,10 @@ if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_ANALYZEREQUEST']._serialized_start=40
   _globals['_ANALYZEREQUEST']._serialized_end=92
-  _globals['_ANALYZERESPONSE']._serialized_start=94
-  _globals['_ANALYZERESPONSE']._serialized_end=188
-  _globals['_VIDEODETECTORSERVICE']._serialized_start=190
-  _globals['_VIDEODETECTORSERVICE']._serialized_end=295
+  _globals['_DETECTORRESULT']._serialized_start=94
+  _globals['_DETECTORRESULT']._serialized_end=178
+  _globals['_ANALYZERESPONSE']._serialized_start=181
+  _globals['_ANALYZERESPONSE']._serialized_end=326
+  _globals['_VIDEODETECTORSERVICE']._serialized_start=328
+  _globals['_VIDEODETECTORSERVICE']._serialized_end=433
 # @@protoc_insertion_point(module_scope)
