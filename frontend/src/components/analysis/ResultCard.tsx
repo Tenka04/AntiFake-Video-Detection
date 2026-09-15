@@ -13,7 +13,6 @@ export function ResultCard({ result }: ResultCardProps) {
   // Use thresholds matching the backend verdict logic
   const isAiGenerated = aiScore >= 0.75;
   const isAuthentic = aiScore <= 0.35;
-  const isInconclusive = !isAiGenerated && !isAuthentic;
   
   const statusColor = isAiGenerated 
     ? "text-danger bg-danger/20 border-danger/30" 
