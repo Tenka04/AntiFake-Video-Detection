@@ -27,19 +27,18 @@ export function ResultCard({ result }: ResultCardProps) {
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (aiScore * circumference);
 
-  // Map detector names to icons
   const getDetectorIcon = (name: string) => {
     const n = name.toLowerCase();
-    if (n.includes('clip') || n.includes('visual')) return <Eye className="w-4 h-4 text-blue-400" />;
-    if (n.includes('temporal')) return <ActivitySquare className="w-4 h-4 text-purple-400" />;
-    if (n.includes('frequency')) return <Waves className="w-4 h-4 text-cyan-400" />;
-    if (n.includes('noise')) return <Fingerprint className="w-4 h-4 text-green-400" />;
-    if (n.includes('compression')) return <FileArchive className="w-4 h-4 text-orange-400" />;
-    return <Search className="w-4 h-4 text-gray-400" />;
+    if (n.includes('clip') || n.includes('visual')) return <Eye className="w-4 h-4 text-blue-500 dark:text-blue-400" />;
+    if (n.includes('temporal')) return <ActivitySquare className="w-4 h-4 text-purple-500 dark:text-purple-400" />;
+    if (n.includes('frequency')) return <Waves className="w-4 h-4 text-cyan-500 dark:text-cyan-400" />;
+    if (n.includes('noise')) return <Fingerprint className="w-4 h-4 text-emerald-500 dark:text-green-400" />;
+    if (n.includes('compression')) return <FileArchive className="w-4 h-4 text-amber-500 dark:text-orange-400" />;
+    return <Search className="w-4 h-4 text-slate-400 dark:text-gray-400" />;
   };
 
   return (
-    <div className="w-full bg-surface/40 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+    <div className="w-full bg-white/70 dark:bg-surface/40 backdrop-blur-md border border-slate-200/80 dark:border-white/10 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
       {/* Background Glow */}
       <div className={cn(
         "absolute -top-32 -right-32 w-64 h-64 rounded-full blur-3xl opacity-20 pointer-events-none",
@@ -48,9 +47,9 @@ export function ResultCard({ result }: ResultCardProps) {
 
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
             Analysis Results
-            <span className={cn("px-3 py-1 text-xs rounded-full border flex items-center gap-1", statusColor)}>
+            <span className={cn("px-3 py-1 text-xs rounded-full border flex items-center gap-1 font-medium", statusColor)}>
               {isAiGenerated ? (
                 <><AlertTriangle className="w-3 h-3" /> AI Generated</>
               ) : isAuthentic ? (
@@ -60,20 +59,20 @@ export function ResultCard({ result }: ResultCardProps) {
               )}
             </span>
           </h2>
-          <p className="text-gray-400 text-sm mt-1 flex items-center gap-2">
-            <span className="font-mono bg-black/40 px-2 py-0.5 rounded">ID: {result.id}</span>
+          <p className="text-slate-500 dark:text-gray-400 text-sm mt-1 flex items-center gap-2">
+            <span className="font-mono bg-slate-100 dark:bg-black/40 px-2 py-0.5 rounded border border-slate-200 dark:border-transparent">ID: {result.id}</span>
             <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {new Date(result.timestamp).toLocaleTimeString()}</span>
           </p>
         </div>
         
         <div className="flex gap-4">
-          <div className="bg-black/40 rounded-xl p-3 border border-white/5 flex flex-col items-center min-w-[100px]">
-            <div className="text-xs text-gray-500 mb-1 flex items-center gap-1"><Activity className="w-3 h-3 text-primary" /> Confidence</div>
-            <div className="text-xl font-bold text-white">{Math.round(confidence * 100)}%</div>
+          <div className="bg-slate-100/80 dark:bg-black/40 rounded-xl p-3 border border-slate-200/80 dark:border-white/5 flex flex-col items-center min-w-[100px]">
+            <div className="text-xs text-slate-500 dark:text-gray-500 mb-1 flex items-center gap-1"><Activity className="w-3 h-3 text-primary" /> Confidence</div>
+            <div className="text-xl font-bold text-slate-900 dark:text-white">{Math.round(confidence * 100)}%</div>
           </div>
-          <div className="bg-black/40 rounded-xl p-3 border border-white/5 flex flex-col items-center min-w-[100px]">
-            <div className="text-xs text-gray-500 mb-1 flex items-center gap-1"><Cpu className="w-3 h-3 text-secondary" /> Engine</div>
-            <div className="text-sm font-medium text-white truncate max-w-[90px]" title={result.model_info || 'AntiFake V2'}>
+          <div className="bg-slate-100/80 dark:bg-black/40 rounded-xl p-3 border border-slate-200/80 dark:border-white/5 flex flex-col items-center min-w-[100px]">
+            <div className="text-xs text-slate-500 dark:text-gray-500 mb-1 flex items-center gap-1"><Cpu className="w-3 h-3 text-secondary" /> Engine</div>
+            <div className="text-sm font-medium text-slate-900 dark:text-white truncate max-w-[90px]" title={result.model_info || 'AntiFake V2'}>
               {result.model_info || 'AntiFake V2'}
             </div>
           </div>
@@ -82,8 +81,8 @@ export function ResultCard({ result }: ResultCardProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
         {/* Main Score Gauge */}
-        <div className="col-span-1 md:col-span-4 bg-black/40 rounded-2xl p-6 border border-white/5 flex flex-col items-center justify-center relative shadow-inner">
-          <h3 className="text-gray-400 font-medium mb-6">AI Probability Score</h3>
+        <div className="col-span-1 md:col-span-4 bg-slate-100/80 dark:bg-black/40 rounded-2xl p-6 border border-slate-200/80 dark:border-white/5 flex flex-col items-center justify-center relative shadow-inner">
+          <h3 className="text-slate-600 dark:text-gray-400 font-medium mb-6">AI Probability Score</h3>
           
           <div className="relative w-48 h-48 flex items-center justify-center">
             {/* Background Circle */}
@@ -93,7 +92,7 @@ export function ResultCard({ result }: ResultCardProps) {
                 stroke="currentColor"
                 strokeWidth="12"
                 fill="transparent"
-                className="text-white/10"
+                className="text-slate-200 dark:text-white/10"
               />
               {/* Progress Circle */}
               <circle
@@ -112,12 +111,12 @@ export function ResultCard({ result }: ResultCardProps) {
                 "text-5xl font-black tracking-tighter",
                 isAiGenerated ? "text-danger" : isAuthentic ? "text-success" : "text-yellow-500"
               )}>
-                {Math.round(aiScore * 100)}<span className="text-2xl text-gray-500">%</span>
+                {Math.round(aiScore * 100)}<span className="text-2xl text-slate-400 dark:text-gray-500">%</span>
               </span>
             </div>
           </div>
           
-          <div className="w-full flex justify-between mt-8 text-xs font-medium text-gray-500 px-4">
+          <div className="w-full flex justify-between mt-8 text-xs font-medium text-slate-500 dark:text-gray-500 px-4">
             <span className="flex flex-col items-center gap-1"><span className="w-2 h-2 rounded-full bg-success"></span>Human</span>
             <span className="flex flex-col items-center gap-1"><span className="w-2 h-2 rounded-full bg-danger"></span>AI Generated</span>
           </div>
@@ -125,20 +124,20 @@ export function ResultCard({ result }: ResultCardProps) {
 
         {/* Detector Breakdown */}
         <div className="col-span-1 md:col-span-8 flex flex-col">
-          <h3 className="text-lg font-semibold text-white mb-4">Forensic Evidence Breakdown</h3>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Forensic Evidence Breakdown</h3>
           
-          <div className="bg-black/30 rounded-2xl border border-white/5 overflow-hidden flex-1">
+          <div className="bg-slate-100/60 dark:bg-black/30 rounded-2xl border border-slate-200/80 dark:border-white/5 overflow-hidden flex-1">
             {result.detectors && result.detectors.length > 0 ? (
-              <div className="divide-y divide-white/5 max-h-[300px] overflow-y-auto custom-scrollbar">
+              <div className="divide-y divide-slate-200/80 dark:divide-white/5 max-h-[300px] overflow-y-auto custom-scrollbar">
                 {result.detectors.map((detector, idx) => (
-                  <div key={idx} className="p-4 hover:bg-white/[0.02] transition-colors">
+                  <div key={idx} className="p-4 hover:bg-white/80 dark:hover:bg-white/[0.02] transition-colors">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2">
                         {getDetectorIcon(detector.name)}
-                        <span className="font-semibold text-gray-200">{detector.name}</span>
+                        <span className="font-semibold text-slate-800 dark:text-gray-200">{detector.name}</span>
                       </div>
                       <div className="flex items-center gap-3 text-sm">
-                        <span className="text-gray-500">Conf: {Math.round(detector.confidence * 100)}%</span>
+                        <span className="text-slate-500 dark:text-gray-500">Conf: {Math.round(detector.confidence * 100)}%</span>
                         <div className={cn(
                           "px-2 py-0.5 rounded text-xs font-medium border",
                           detector.ai_score > 0.6 ? "bg-danger/10 text-danger border-danger/20" :
@@ -149,15 +148,15 @@ export function ResultCard({ result }: ResultCardProps) {
                         </div>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-400 pl-6 leading-relaxed">
+                    <p className="text-sm text-slate-600 dark:text-gray-400 pl-6 leading-relaxed">
                       {detector.reason}
                     </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="p-8 text-center text-gray-500 flex flex-col items-center justify-center h-full">
-                <Search className="w-8 h-8 mb-2 opacity-20" />
+              <div className="p-8 text-center text-slate-500 dark:text-gray-500 flex flex-col items-center justify-center h-full">
+                <Search className="w-8 h-8 mb-2 opacity-30" />
                 <p>{result.summary || "No detailed detector breakdown available for this analysis."}</p>
               </div>
             )}
