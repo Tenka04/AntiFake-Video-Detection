@@ -12,7 +12,6 @@ export function VideoPreview({ file, url, onRemove }: VideoPreviewProps) {
   const [thumbnailSrc, setThumbnailSrc] = useState<string | null>(null);
   const [videoError, setVideoError] = useState(false);
 
-  // Extract YouTube video ID from various URL formats
   const getYouTubeThumbnail = (videoUrl: string): string | null => {
     const patterns = [
       /(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/,
@@ -35,7 +34,6 @@ export function VideoPreview({ file, url, onRemove }: VideoPreviewProps) {
       setVideoSrc(objectUrl);
       return () => URL.revokeObjectURL(objectUrl);
     } else if (url) {
-      // Try to get a platform thumbnail first
       const ytThumb = getYouTubeThumbnail(url);
       if (ytThumb) {
         setThumbnailSrc(ytThumb);
@@ -47,7 +45,7 @@ export function VideoPreview({ file, url, onRemove }: VideoPreviewProps) {
       setVideoSrc(null);
     }
   }, [file, url]);
-  // Format file size
+
   const formatSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -57,10 +55,10 @@ export function VideoPreview({ file, url, onRemove }: VideoPreviewProps) {
   };
 
   return (
-    <div className="w-full bg-surface/40 backdrop-blur-sm border border-white/10 rounded-2xl p-4 overflow-hidden">
+    <div className="w-full bg-white/70 dark:bg-surface/40 backdrop-blur-xs border border-slate-200/80 dark:border-white/10 rounded-2xl p-4 overflow-hidden shadow-xs">
       <div className="flex flex-col md:flex-row gap-6 items-center">
         {/* Video Thumbnail */}
-        <div className="w-full md:w-48 h-32 bg-black/50 rounded-xl border border-white/5 flex items-center justify-center relative group overflow-hidden">
+        <div className="w-full md:w-48 h-32 bg-slate-900/90 dark:bg-black/50 rounded-xl border border-slate-200 dark:border-white/5 flex items-center justify-center relative group overflow-hidden">
           {thumbnailSrc ? (
             <img 
               src={thumbnailSrc} 
@@ -79,7 +77,7 @@ export function VideoPreview({ file, url, onRemove }: VideoPreviewProps) {
           ) : (
             <>
               <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-secondary/20 opacity-50"></div>
-              <Video className="w-10 h-10 text-gray-500 relative z-10" />
+              <Video className="w-10 h-10 text-slate-400 dark:text-gray-500 relative z-10" />
               <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-black/70 rounded text-[10px] text-white font-medium z-10">
                 00:00
               </div>
@@ -95,10 +93,10 @@ export function VideoPreview({ file, url, onRemove }: VideoPreviewProps) {
                 <FileVideo className="w-5 h-5" />
               </div>
               <div className="overflow-hidden">
-                <h3 className="text-white font-medium truncate max-w-xs md:max-w-md">
+                <h3 className="text-slate-900 dark:text-white font-medium truncate max-w-xs md:max-w-md">
                   {file ? file.name : url?.split('/').pop() || 'Video URL'}
                 </h3>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-slate-500 dark:text-gray-500 mt-1">
                   {file ? formatSize(file.size) : 'External Source'}
                 </p>
               </div>
@@ -106,7 +104,7 @@ export function VideoPreview({ file, url, onRemove }: VideoPreviewProps) {
             
             <button 
               onClick={onRemove}
-              className="p-2 text-gray-500 hover:text-danger hover:bg-danger/10 rounded-lg transition-colors"
+              className="p-2 text-slate-400 dark:text-gray-500 hover:text-danger hover:bg-danger/10 rounded-lg transition-colors cursor-pointer"
               title="Remove video"
             >
               <Trash2 className="w-5 h-5" />
@@ -116,7 +114,7 @@ export function VideoPreview({ file, url, onRemove }: VideoPreviewProps) {
           <div className="mt-6 flex gap-3">
             <button 
               onClick={onRemove}
-              className="px-4 py-2 text-sm font-medium text-white bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-white bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg border border-slate-200 dark:border-white/10 transition-colors cursor-pointer"
             >
               Change Video
             </button>
