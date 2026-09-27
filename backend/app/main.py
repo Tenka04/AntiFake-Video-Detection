@@ -15,9 +15,10 @@ database.init_db()
 app = FastAPI(title="AI Video Detector API")
 
 # Configure CORS for frontend access
+CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=[o.strip() for o in CORS_ORIGINS.split(",")],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -27,7 +28,7 @@ class VideoUrlRequest(BaseModel):
     url: str
 
 # Ensure upload directory exists
-UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "uploads")
+UPLOAD_DIR = os.environ.get("UPLOAD_DIR", os.path.join(os.path.dirname(__file__), "..", "..", "uploads"))
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @app.post("/api/analyze-video")
@@ -217,3 +218,8 @@ async def get_stats():
     Returns dashboard statistics from the database.
     """
     return database.get_stats()
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring services like UptimeRobot."""
+    return {"status": "ok", "service": "api-gateway"}

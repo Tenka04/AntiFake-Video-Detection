@@ -10,6 +10,12 @@ fastapi>=0.115,<1.0
 uvicorn[standard]>=0.30,<1.0
 python-multipart>=0.0.9
 
+# Gradio (for Hugging Face Spaces Gradio SDK)
+gradio>=4.0.0
+
 # gRPC communication
 grpcio>=1.62.0
 grpcio-tools>=1.62.0
+
+# HTTP client for production model service communication
+requests>=2.31.0

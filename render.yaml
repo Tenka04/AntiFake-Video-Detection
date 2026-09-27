@@ -1,0 +1,24 @@
+# ── Render Infrastructure-as-Code ──────────────────────────────────
+# Render auto-detects this file and creates the service on connect.
+# Docs: https://docs.render.com/infrastructure-as-code
+# ──────────────────────────────────────────────────────────────────
+
+services:
+  - type: web
+    name: antifake-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      - key: MODEL_SERVICE_HOST
+        value: https://tenka04-antifake.hf.space
+      - key: CORS_ORIGINS
+        value: https://antifake.vercel.app,http://localhost:5173
+      - key: UPLOAD_DIR
+        value: /tmp/uploads
+      - key: DB_PATH
+        value: /tmp/video_history.db
